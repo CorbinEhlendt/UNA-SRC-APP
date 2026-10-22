@@ -21,14 +21,14 @@ people who are experienced in the gym but want to know how busy the SRC is to he
 
 ### What Already exists
  - Hevy App
-    - blank
+    - Hevy is basically just a logging app for people who already know what exercises they need to do. It does not generate a plan for users, it's just a way to track your progress.
  - UAB Rec App
     - The UAB Rec App looks like it has many features, the one that looks the most relevant to us is a schedule. Their app shows different events or classes going on in their rec center which would be useful. We want to replicate this and potentially have notifications that let users know if something is going on that they may be interested in.
  - Planet Fitness Crowd Meter
     - The crowd meter uses real time check-ins as well as historical data to give users an idea how how busy certain times are at the gym by checking the app on their phone. This is a great tool that we would like
       to replicate on our app for Students here at UNA. 
  - FitBod App
-    - blank
+    - FitBod differs from Hevy where it is an AI-driven app that generates a personalized plan for you. We could take inspiration from this for our SRC app.
 
 ### Done
  The main focuses for Kilo is to have a functioning "busy meter" to see how busy the SRC is as well as a functioning AI helper that can create a workout for students who are busy and have a limited time frame to get in a workout. 
