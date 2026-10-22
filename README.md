@@ -1,5 +1,5 @@
 # UNA-SRC-APP
-> An app for students that are new or experienced in the SRC and what it has to offer.
+> An app to help students manage their time with the SRC
 
 ### Authorship 
 
