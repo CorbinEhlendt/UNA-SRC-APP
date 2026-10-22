@@ -25,7 +25,7 @@ more knowledge of how many people are their as well as creating a plan to help t
 ### What Already exists
  - [Hevy App](https://www.hevyapp.com/) 
     - Hevy is basically just a logging app for people who already know what exercises they need to do. It does not generate a plan for users, it's just a way to track your progress.
- - [UAB Rec Ap](https://www.uab.edu/students/universityrecreation/about/mobile-app)
+ - [UAB Rec App](https://www.uab.edu/students/universityrecreation/about/mobile-app)
     - The UAB Rec App looks like it has many features, the one that looks the most relevant to us is a schedule. Their app shows different events or classes going on in their rec center which would be useful. We want to         replicate this and potentially have notifications that let users know if something is going on that they may be interested in.
  - [Planet Fitness Crowd Meter](https://pfmembership.com/planet-fitness-crowd-meter/)
     - The crowd meter uses real time check-ins as well as historical data to give users an idea how how busy certain times are at the gym by checking the app on their phone. This is a great tool that we would like
@@ -36,6 +36,13 @@ more knowledge of how many people are their as well as creating a plan to help t
 ### Done
  The main focuses for Kilo is to have a functioning "busy meter" to see how busy the SRC is as well as a functioning <br>
  AI helper that can create a workout for students who are busy and have a limited time frame to get in a workout. 
+
+### Plan
+Starting point --- We have each of our HOTEL repos to build off of. <br>
+Direction --- We hope we have an app that has functioning busy meter and a working AI helper that can generate an effective plan for students given a schedule.  <br>
+Capabilities --- AI, geolocation, file uploads<br>
+Biggest unknowns --- Unsure how to implement geolocation for the meter, a pop-up to check-in could be the fallback. <br>
+Project links --- [backlog](https://github.com/CorbinEhlendt/UNA-SRC-APP/issues), [milestones](https://github.com/CorbinEhlendt/UNA-SRC-APP/milestones)
 
 ### Sprint 99
 - Incorporate the SRC as a whole and not just the Gym
