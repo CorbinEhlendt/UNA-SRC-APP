@@ -1,0 +1,31 @@
+{
+  "name": "fullstack-brain-bucket",
+  "version": "1.0.0",
+  "description": "> [dev project] charlie",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev": "nodemon app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CorbinEhlendt/fullstack-brain-bucket.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/CorbinEhlendt/fullstack-brain-bucket/issues"
+  },
+  "homepage": "https://github.com/CorbinEhlendt/fullstack-brain-bucket#readme",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "mongodb": "^7.6.0",
+    "nodemon": "^1.14.10"
+  }
+}

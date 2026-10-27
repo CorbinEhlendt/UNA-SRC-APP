@@ -1,0 +1,69 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Brain Bucket Ideas</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header>
+    <h1>Brain Bucket</h1>
+    <p>Save your ideas. Keep track of your progress.</p>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>Add or Edit an Idea</h2>
+
+      <form id="ideaForm">
+        <label for="name">Idea Name</label>
+        <input id="name" name="name" required maxlength="100">
+
+        <label for="description">Description</label>
+        <textarea id="description" name="description"
+          maxlength="1000"></textarea>
+
+        <label for="category">Category</label>
+        <input id="category" name="category" required maxlength="60">
+
+        <label for="status">Status</label>
+        <select id="status" name="status">
+          <option>New</option>
+          <option>In Progress</option>
+          <option>Completed</option>
+        </select>
+
+        <div class="actions">
+          <button type="submit">Add Idea</button>
+          <button type="button" id="cancelEdit" hidden>
+            Cancel Edit
+          </button>
+        </div>
+      </form>
+
+      <p id="message" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="panel">
+      <h2>Your Ideas</h2>
+
+      <div class="filters">
+        <label for="search">Search by name</label>
+        <input id="search" placeholder="Search ideas">
+
+        <label for="categoryFilter">Filter by category</label>
+        <input id="categoryFilter" placeholder="Example: School">
+      </div>
+
+      <div id="ideaList" class="idea-list"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Brain Bucket · Full-stack CRUD project</p>
+  </footer>
+</body>
+</html>
