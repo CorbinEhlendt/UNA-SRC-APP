@@ -1,69 +1,68 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Brain Bucket Ideas</title>
+  <meta name="theme-color" content="#4b2b7f">
+  <title>UNA SRC | Gym Crowd Meter</title>
   <link rel="stylesheet" href="/style.css">
   <script src="/app.js" defer></script>
 </head>
 <body>
-  <header>
-    <h1>Brain Bucket</h1>
-    <p>Save your ideas. Keep track of your progress.</p>
+  <header class="site-header">
+    <div class="brand-mark" aria-hidden="true">UNA</div>
+    <div>
+      <p class="eyebrow">UNIVERSITY OF NORTH ALABAMA</p>
+      <h1>Student Recreation Center</h1>
+      <p class="subtitle">Live Community Crowd Meter</p>
+    </div>
   </header>
 
   <main>
-    <section class="panel">
-      <h2>Add or Edit an Idea</h2>
-
-      <form id="ideaForm">
-        <label for="name">Idea Name</label>
-        <input id="name" name="name" required maxlength="100">
-
-        <label for="description">Description</label>
-        <textarea id="description" name="description"
-          maxlength="1000"></textarea>
-
-        <label for="category">Category</label>
-        <input id="category" name="category" required maxlength="60">
-
-        <label for="status">Status</label>
-        <select id="status" name="status">
-          <option>New</option>
-          <option>In Progress</option>
-          <option>Completed</option>
-        </select>
-
-        <div class="actions">
-          <button type="submit">Add Idea</button>
-          <button type="button" id="cancelEdit" hidden>
-            Cancel Edit
-          </button>
+    <section class="card current-card" aria-labelledby="current-heading">
+      <div class="section-top">
+        <div>
+          <p class="eyebrow">RIGHT NOW</p>
+          <h2 id="current-heading">How busy is the gym?</h2>
         </div>
-      </form>
-
-      <p id="message" role="status" aria-live="polite"></p>
-    </section>
-
-    <section class="panel">
-      <h2>Your Ideas</h2>
-
-      <div class="filters">
-        <label for="search">Search by name</label>
-        <input id="search" placeholder="Search ideas">
-
-        <label for="categoryFilter">Filter by category</label>
-        <input id="categoryFilter" placeholder="Example: School">
+        <span id="connectionStatus" class="status-pill">Connecting…</span>
       </div>
 
-      <div id="ideaList" class="idea-list"></div>
+      <div class="crowd-count-row">
+        <div>
+          <p id="busyLevel" class="busy-level">Checking…</p>
+          <p id="countSummary" class="muted">Loading active check-ins…</p>
+        </div>
+        <div class="count-bubble" aria-label="Active check-in count">
+          <span id="peopleCount">—</span>
+          <small>checked in</small>
+        </div>
+      </div>
+
+      <div class="meter-track" role="img" aria-label="Gym crowd meter">
+        <div id="meterFill" class="meter-fill" style="width: 0%"></div>
+      </div>
+      <div class="meter-labels"><span>Not busy</span><span>Getting busy</span><span>Very busy</span></div>
+      <p id="updatedAt" class="updated-at">Updated: checking…</p>
+    </section>
+
+    <section class="card checkin-card" aria-labelledby="checkin-heading">
+      <p class="eyebrow">AT THE SRC RIGHT NOW?</p>
+      <h2 id="checkin-heading">Add yourself to the count</h2>
+      <p class="muted">Tap once to let other students know you're here. Your check-in automatically expires after one hour.</p>
+      <button id="checkinButton" class="checkin-button" type="button">
+        <span aria-hidden="true">＋</span> I'm at the gym
+      </button>
+      <p id="checkinMessage" class="message" role="status" aria-live="polite"></p>
+      <p class="fine-print">One active check-in per browser. This is a community estimate, not an official headcount, and it may not include everyone in the gym.</p>
+    </section>
+
+    <section class="card about-card">
+      <h2>How it works</h2>
+      <p class="muted">The number shows active community check-ins from the past hour. The crowd label is an estimate based on that count. The levels can be adjusted after testing at the SRC.</p>
     </section>
   </main>
 
-  <footer>
-    <p>Brain Bucket · Full-stack CRUD project</p>
-  </footer>
+  <footer>UNA SRC · Early prototype</footer>
 </body>
 </html>
