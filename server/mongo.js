@@ -62,31 +62,19 @@ app.get("/api/busy-meter", async (req, res) => {
   }
 });
 
-// GET route for QR Code check-ins
-app.get("/api/busy-meter/check-in", async (req, res) => {
-  let visitorId = req.query.visitorId;
 
-  if (!validVisitorId(visitorId)) {
-    // Generate a default valid visitorId if missing
-    visitorId = `qr-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-  }
+// Updated GET route for QR Code check-ins in server/mongo.js
+app.get("/api/busy-meter/check-in", async (req, res) => {
+  // Generate a brand new unique ID for every scan so multiple people scanning 
+  // on separate phones (or even testing on the same browser) each count as a unique check-in.
+  const visitorId = `scan-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
   try {
-    const cutoff = new Date(Date.now() - CHECKIN_WINDOW_MINUTES * 60 * 1000);
-    const existing = await checkIns.findOne({ visitorId, createdAt: { $gte: cutoff } });
     const now = new Date();
 
-    if (existing) {
-      await checkIns.updateOne({ _id: existing._id }, { $set: { createdAt: now } });
-    } else {
-      await checkIns.updateOne(
-        { visitorId },
-        { $set: { visitorId, createdAt: now } },
-        { upsert: true }
-      );
-    }
+    // Insert as a new unique check-in document every time the QR code is scanned
+    await checkIns.insertOne({ visitorId, createdAt: now });
 
-    // Return HTML confirmation page for mobile scanners
     res.send(`
       <!DOCTYPE html>
       <html lang="en">
