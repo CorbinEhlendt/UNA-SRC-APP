@@ -8,11 +8,14 @@
 ### Dev Server
  - [dev server](https://corbin-fullstack-brain-bucket.onrender.com/)
 
-### User Story
-
+### User Story #1
+ - As Students who want to visit the SRC,
+ - we want to be able to check how busy it is before we go, and check-in once we get there,
+ - in order for students to plan their time to go beforehand.
+### User Story #2
  - As Students at UNA who work out,
- - we want to create an app to help students manage their time around working out at the SRC,
- - so that they feel more willing and prepared for working out.
+ - we want to create an app to help students manage their workout routines at the SRC,
+ - so that they feel more willing and prepared for exercising.
 
 ### The Problem
 The SRC At UNA doesn't currently have any app for students.<br>
@@ -40,10 +43,8 @@ more knowledge of how many people are their as well as creating a plan to help t
  The main focuses for Kilo is to have a functioning "busy meter" to see how busy the SRC is as well as a functioning <br>
  AI helper that can create a workout for students who are busy and have a limited time frame to get in a workout. 
 
-### Sprint 99
-- Incorporate the SRC as a whole and not just the Gym
-- Community Board - allow users to have somewhere to communicate with each other and find workout buddies.
-- Have a calendar of some sort to show users events and classes going on in the SRC
+### [Sprint 99](https://github.com/CorbinEhlendt/UNA-SRC-APP/milestone/5)
+
   
 
 
