@@ -90,6 +90,17 @@ async function checkIn() {
   }
 }
 
+function renderQRCode() {
+  const qrImg = document.querySelector("#qrCodeImage");
+  if (qrImg) {
+    const checkInUrl = `${window.location.origin}/api/busy-meter/check-in?visitorId=${encodeURIComponent(visitorId)}`;
+    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(checkInUrl)}`;
+  }
+}
+
+// Call renderQRCode after visitorId is defined
+renderQRCode();
+
 button.addEventListener("click", checkIn);
 refreshMeter();
 setInterval(refreshMeter, 15000);
