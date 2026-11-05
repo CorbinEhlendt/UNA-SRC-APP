@@ -18,56 +18,71 @@
     </div>
   </header>
 
-  <main>
-    <section class="card current-card" aria-labelledby="current-heading">
-      <div class="section-top">
-        <div>
-          <p class="eyebrow">RIGHT NOW</p>
-          <h2 id="current-heading">How busy is the gym?</h2>
+  <main class="dashboard-grid">
+    <!-- Left Column: Primary Content -->
+    <div class="main-column">
+      <section class="card current-card" aria-labelledby="current-heading">
+        <div class="section-top">
+          <div>
+            <p class="eyebrow">RIGHT NOW</p>
+            <h2 id="current-heading">How busy is the gym?</h2>
+          </div>
+          <span id="connectionStatus" class="status-pill">Connecting…</span>
         </div>
-        <span id="connectionStatus" class="status-pill">Connecting…</span>
-      </div>
 
-      <div class="crowd-count-row">
-        <div>
-          <p id="busyLevel" class="busy-level">Checking…</p>
-          <p id="countSummary" class="muted">Loading active check-ins…</p>
+        <div class="crowd-count-row">
+          <div>
+            <p id="busyLevel" class="busy-level">Checking…</p>
+            <p id="countSummary" class="muted">Loading active check-ins…</p>
+          </div>
+          <div class="count-bubble" aria-label="Active check-in count">
+            <span id="peopleCount">—</span>
+            <small>checked in</small>
+          </div>
         </div>
-        <div class="count-bubble" aria-label="Active check-in count">
-          <span id="peopleCount">—</span>
-          <small>checked in</small>
+
+        <div class="meter-track" role="img" aria-label="Gym crowd meter">
+          <div id="meterFill" class="meter-fill" style="width: 0%"></div>
         </div>
-      </div>
+        <div class="meter-labels"><span>Not busy</span><span>Getting busy</span><span>Very busy</span></div>
+        <p id="updatedAt" class="updated-at">Updated: checking…</p>
+      </section>
 
-      <div class="meter-track" role="img" aria-label="Gym crowd meter">
-        <div id="meterFill" class="meter-fill" style="width: 0%"></div>
-      </div>
-      <div class="meter-labels"><span>Not busy</span><span>Getting busy</span><span>Very busy</span></div>
-      <p id="updatedAt" class="updated-at">Updated: checking…</p>
-    </section>
+      <section class="card checkin-card" aria-labelledby="checkin-heading">
+        <p class="eyebrow">AT THE SRC RIGHT NOW?</p>
+        <h2 id="checkin-heading">Add yourself to the count</h2>
+        <p class="muted">Tap once to let other students know you're here. Your check-in automatically expires after one hour.</p>
+        <button id="checkinButton" class="checkin-button" type="button">
+          <span aria-hidden="true">＋</span> I'm at the gym
+        </button>
+        <p id="checkinMessage" class="message" role="status" aria-live="polite"></p>
+        <p class="fine-print">One active check-in per browser. This is a community estimate, not an official headcount, and it may not include everyone in the gym.</p>
+      </section>
 
-    <section class="card checkin-card" aria-labelledby="checkin-heading">
-      <p class="eyebrow">AT THE SRC RIGHT NOW?</p>
-      <h2 id="checkin-heading">Add yourself to the count</h2>
-      <p class="muted">Tap once to let other students know you're here. Your check-in automatically expires after one hour.</p>
-      <button id="checkinButton" class="checkin-button" type="button">
-        <span aria-hidden="true">＋</span> I'm at the gym
-      </button>
-      <p id="checkinMessage" class="message" role="status" aria-live="polite"></p>
-      <p class="fine-print">One active check-in per browser. This is a community estimate, not an official headcount, and it may not include everyone in the gym.</p>
-    </section>
+      <section class="card fitness-link-card" aria-labelledby="fitness-link-heading">
+        <p class="eyebrow">PLAN YOUR WEEK</p>
+        <h2 id="fitness-link-heading">Need help fitting workouts around classes?</h2>
+        <p class="muted">Build a flexible workout schedule with the UNA Fitness Assistant.</p>
+        <a class="checkin-button fitness-link-button" href="/fitness.html">Open Fitness Assistant</a>
+      </section>
 
-    <section class="card fitness-link-card" aria-labelledby="fitness-link-heading">
-      <p class="eyebrow">PLAN YOUR WEEK</p>
-      <h2 id="fitness-link-heading">Need help fitting workouts around classes?</h2>
-      <p class="muted">Build a flexible workout schedule with the UNA Fitness Assistant.</p>
-      <a class="checkin-button fitness-link-button" href="/fitness.html">Open Fitness Assistant</a>
-    </section>
+      <section class="card about-card">
+        <h2>How it works</h2>
+        <p class="muted">The number shows active community check-ins from the past hour. The crowd label is an estimate based on that count. The levels can be adjusted after testing at the SRC.</p>
+      </section>
+    </div>
 
-    <section class="card about-card">
-      <h2>How it works</h2>
-      <p class="muted">The number shows active community check-ins from the past hour. The crowd label is an estimate based on that count. The levels can be adjusted after testing at the SRC.</p>
-    </section>
+    <!-- Right Column: QR Code Sidebar -->
+    <aside class="side-column">
+      <section class="card qr-card" aria-labelledby="qr-heading">
+        <p class="eyebrow">SCAN TO CHECK IN</p>
+        <h2 id="qr-heading">QR Code Check-In</h2>
+        <p class="muted">Scan this code with your mobile camera to instantly add yourself as checked in.</p>
+        <div class="qr-container">
+          <img id="qrCodeImage" src="" alt="Check-In QR Code" class="qr-image" />
+        </div>
+      </section>
+    </aside>
   </main>
 
   <footer>UNA SRC · Early prototype</footer>

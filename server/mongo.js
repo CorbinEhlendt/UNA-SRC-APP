@@ -62,6 +62,58 @@ app.get("/api/busy-meter", async (req, res) => {
   }
 });
 
+// GET route for QR Code check-ins
+app.get("/api/busy-meter/check-in", async (req, res) => {
+  let visitorId = req.query.visitorId;
+
+  if (!validVisitorId(visitorId)) {
+    // Generate a default valid visitorId if missing
+    visitorId = `qr-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+  }
+
+  try {
+    const cutoff = new Date(Date.now() - CHECKIN_WINDOW_MINUTES * 60 * 1000);
+    const existing = await checkIns.findOne({ visitorId, createdAt: { $gte: cutoff } });
+    const now = new Date();
+
+    if (existing) {
+      await checkIns.updateOne({ _id: existing._id }, { $set: { createdAt: now } });
+    } else {
+      await checkIns.updateOne(
+        { visitorId },
+        { $set: { visitorId, createdAt: now } },
+        { upsert: true }
+      );
+    }
+
+    // Return HTML confirmation page for mobile scanners
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>UNA SRC | QR Check-In</title>
+        <link rel="stylesheet" href="/style.css">
+      </head>
+      <body style="display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f4f4f9;">
+        <main style="max-width: 400px; width: 90%; text-align: center;">
+          <section class="card" style="padding: 2rem;">
+            <h1 style="color: #4b2b7f; margin-bottom: 0.5rem;">✅ Checked In!</h1>
+            <p style="font-size: 1.1rem; color: #333;">You've successfully checked in to the UNA Student Recreation Center.</p>
+            <p style="font-size: 0.9rem; color: #666; margin-top: 1rem;">Your check-in will automatically expire in 60 minutes.</p>
+            <a href="/" class="checkin-button" style="display: inline-block; margin-top: 1.5rem; text-decoration: none;">View Busy Meter</a>
+          </section>
+        </main>
+      </body>
+      </html>
+    `);
+  } catch (error) {
+    console.error("Could not process QR check-in:", error.message);
+    res.status(500).send("Error processing check-in. Please try again.");
+  }
+});
+
 app.post("/api/busy-meter/check-in", async (req, res) => {
   const { visitorId } = req.body ?? {};
 
@@ -70,6 +122,7 @@ app.post("/api/busy-meter/check-in", async (req, res) => {
       error: "Your browser check-in ID is missing. Refresh the page and try again."
     });
   }
+
 
   try {
     const cutoff = new Date(Date.now() - CHECKIN_WINDOW_MINUTES * 60 * 1000);
@@ -95,6 +148,8 @@ app.post("/api/busy-meter/check-in", async (req, res) => {
     });
   }
 });
+
+
 
 // ---------------- UNA SRC Fitness Assistant (Gemini, free tier) ----------------
 // Workout plans are generated on demand and are NOT saved in MongoDB.
