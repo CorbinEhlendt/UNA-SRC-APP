@@ -77,12 +77,10 @@ app.post("/api/busy-meter/check-in", async (req, res) => {
     const now = new Date();
 
     if (existing) {
-      // Refresh the existing browser's check-in rather than counting it twice.
       await checkIns.updateOne({ _id: existing._id }, { $set: { createdAt: now } });
       return res.json({ success: true, alreadyCheckedIn: true });
     }
 
-    // Upsert by browser ID. A unique index means one browser can only have one row.
     await checkIns.updateOne(
       { visitorId },
       { $set: { visitorId, createdAt: now } },
@@ -98,20 +96,84 @@ app.post("/api/busy-meter/check-in", async (req, res) => {
   }
 });
 
-// ---------------- UNA SRC Fitness Assistant (Gemini with fallback) ----------------
+// ---------------- UNA SRC Fitness Assistant (Gemini, free tier) ----------------
 // Workout plans are generated on demand and are NOT saved in MongoDB.
 
 const gemini = process.env.GEMINI_API_KEY
   ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
   : null;
 
-// Primary and backup are stable Gemini Flash models.
-// These can also be overridden in server/.env.
-const PRIMARY_GEMINI_MODEL =
-  process.env.GEMINI_MODEL || "gemini-3.8-flash";
-  
-const BACKUP_GEMINI_MODEL =
-  process.env.GEMINI_BACKUP_MODEL || "gemini-3.6-flash";
+const PRIMARY_GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+const BACKUP_GEMINI_MODEL = process.env.GEMINI_BACKUP_MODEL || "gemini-3.6-flash";
+
+// Each model gets at most 3 attempts. Delays are kept bounded so a request
+// does not wait indefinitely when Google's service is overloaded.
+const RETRY_DELAYS_MS = [2000, 5000];
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getErrorStatus(error) {
+  const directStatus = Number(error?.status ?? error?.code);
+  if (Number.isFinite(directStatus) && directStatus > 0) return directStatus;
+
+  const message = String(error?.message ?? "");
+  const match = message.match(/\b(408|429|500|502|503|504)\b/);
+  return match ? Number(match[1]) : 0;
+}
+
+function isTemporaryGeminiError(error) {
+  const status = getErrorStatus(error);
+  const message = String(error?.message ?? "").toUpperCase();
+
+  return (
+    [408, 429, 500, 502, 503, 504].includes(status) ||
+    message.includes("UNAVAILABLE") ||
+    message.includes("RESOURCE_EXHAUSTED") ||
+    message.includes("TOO MANY REQUESTS") ||
+    message.includes("INTERNAL") ||
+    message.includes("HIGH DEMAND") ||
+    message.includes("OVERLOADED")
+  );
+}
+
+function safeErrorMessage(error) {
+  return String(error?.message ?? error ?? "Unknown Gemini error").slice(0, 1000);
+}
+
+async function generateWithModel(model, contents) {
+  let lastError;
+
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt += 1) {
+    try {
+      return await gemini.models.generateContent({
+        model,
+        contents,
+        config: {
+          systemInstruction: FITNESS_INSTRUCTIONS,
+          maxOutputTokens: 3000
+        }
+      });
+    } catch (error) {
+      lastError = error;
+
+      // Do not retry invalid requests, authentication errors, or other
+      // non-temporary failures.
+      if (!isTemporaryGeminiError(error) || attempt === RETRY_DELAYS_MS.length) {
+        throw error;
+      }
+
+      const delay = RETRY_DELAYS_MS[attempt];
+      console.warn(
+        `Gemini model ${model} returned a temporary error (attempt ${attempt + 1}/3). Retrying in ${delay / 1000}s.`
+      );
+      await wait(delay);
+    }
+  }
+
+  throw lastError;
+}
 
 function cleanText(value, maxLength = 160) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
@@ -178,31 +240,6 @@ function validateFitnessInput(body) {
 
 const FITNESS_INSTRUCTIONS = `You are the UNA SRC Fitness Assistant for university students. Be friendly, practical, inclusive, and concise. Help students plan balanced, age-appropriate physical activity around their class schedules and stated preferences. Respect all class times and do not schedule workouts that overlap classes. Include rest/recovery days and flexible options. Do not focus on weight loss, calorie restriction, body shape, or appearance. Do not recommend extreme exercise, exercising through pain, or unsafe challenges. Do not diagnose or provide medical treatment; if a student mentions pain, injury, illness, or a health concern, recommend speaking with a qualified healthcare professional or SRC staff before changing activity. Never claim the schedule guarantees results. If details are missing, make reasonable clearly stated assumptions and invite the student to adjust the plan. Use readable headings and a simple Monday-Sunday layout when generating a schedule.`;
 
-function isTemporaryGeminiError(error) {
-  const status = Number(error?.status ?? error?.code);
-  const message = String(error?.message ?? "").toUpperCase();
-
-  return (
-    [408, 429, 500, 502, 503, 504].includes(status) ||
-    message.includes("UNAVAILABLE") ||
-    message.includes("RESOURCE_EXHAUSTED") ||
-    message.includes("TOO MANY REQUESTS") ||
-    message.includes("INTERNAL") ||
-    message.includes("HIGH DEMAND")
-  );
-}
-
-async function generateWithModel(model, contents) {
-  return gemini.models.generateContent({
-    model,
-    contents,
-    config: {
-      systemInstruction: FITNESS_INSTRUCTIONS,
-      maxOutputTokens: 1200
-    }
-  });
-}
-
 async function requestFitnessAI(input) {
   if (!gemini) {
     const error = new Error(
@@ -212,7 +249,6 @@ async function requestFitnessAI(input) {
     throw error;
   }
 
-  // Gemini uses the role name "model" for assistant replies.
   const contents = typeof input === "string"
     ? input
     : input.map((message) => ({
@@ -220,36 +256,41 @@ async function requestFitnessAI(input) {
         parts: [{ text: message.content }]
       }));
 
-  try {
-    const response = await generateWithModel(PRIMARY_GEMINI_MODEL, contents);
-    return response.text || "I couldn't create a response just now. Please try again.";
-  } catch (primaryError) {
-    const backupIsDifferent = BACKUP_GEMINI_MODEL !== PRIMARY_GEMINI_MODEL;
+  const models = [...new Set([PRIMARY_GEMINI_MODEL, BACKUP_GEMINI_MODEL])];
+  let lastError;
 
-    if (!backupIsDifferent || !isTemporaryGeminiError(primaryError)) {
-      throw primaryError;
-    }
-
-    console.warn(
-      `Primary Gemini model (${PRIMARY_GEMINI_MODEL}) is temporarily unavailable. Trying backup model (${BACKUP_GEMINI_MODEL}).`
-    );
-
+  for (const model of models) {
     try {
-      const backupResponse = await generateWithModel(BACKUP_GEMINI_MODEL, contents);
-      console.log(`Fitness Assistant successfully used backup model: ${BACKUP_GEMINI_MODEL}`);
-      return backupResponse.text || "I couldn't create a response just now. Please try again.";
-    } catch (backupError) {
-      console.error("Both Gemini models failed.", {
-        primaryModel: PRIMARY_GEMINI_MODEL,
-        primaryError: primaryError.message,
-        backupModel: BACKUP_GEMINI_MODEL,
-        backupError: backupError.message
-      });
+      const response = await generateWithModel(model, contents);
+      if (model !== PRIMARY_GEMINI_MODEL) {
+        console.log(`Fitness Assistant successfully used backup model: ${model}`);
+      }
+      return response.text || "I couldn't create a response just now. Please try again.";
+    } catch (error) {
+      lastError = error;
 
-      // Return the backup error so the server log shows the most recent failure.
-      throw backupError;
+      if (!isTemporaryGeminiError(error)) {
+        throw error;
+      }
+
+      if (model !== models[models.length - 1]) {
+        console.warn(
+          `Gemini model ${model} remained unavailable after retries. Trying ${models[models.indexOf(model) + 1]}.`
+        );
+      }
     }
   }
+
+  console.error("All configured Gemini models failed after retries.", {
+    models,
+    error: safeErrorMessage(lastError)
+  });
+
+  const unavailableError = new Error(
+    "Google's free Gemini service is temporarily busy. Your information is okay—please wait a little and try again."
+  );
+  unavailableError.status = 503;
+  throw unavailableError;
 }
 
 app.post("/api/fitness/generate", async (req, res) => {
@@ -269,7 +310,7 @@ app.post("/api/fitness/generate", async (req, res) => {
     const answer = await requestFitnessAI(prompt);
     res.json({ answer });
   } catch (error) {
-    console.error("Fitness schedule generation failed:", error.message);
+    console.error("Fitness schedule generation failed:", safeErrorMessage(error));
     res.status(error.status || 500).json({
       error: error.status
         ? error.message
@@ -314,7 +355,7 @@ app.post("/api/fitness/chat", async (req, res) => {
     const answer = await requestFitnessAI(input);
     res.json({ answer });
   } catch (error) {
-    console.error("Fitness chat failed:", error.message);
+    console.error("Fitness chat failed:", safeErrorMessage(error));
     res.status(error.status || 500).json({
       error: error.status
         ? error.message
