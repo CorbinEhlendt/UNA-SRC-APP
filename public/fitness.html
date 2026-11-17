@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#4b2b7f">
+  <title>UNA SRC | Fitness Assistant</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/fitness.css">
+  <script src="/fitness.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand-mark" href="/" aria-label="Back to UNA SRC home">UNA</a>
+    <div>
+      <p class="eyebrow">UNIVERSITY OF NORTH ALABAMA</p>
+      <h1>UNA Fitness Assistant</h1>
+      <p class="subtitle">Build a workout routine around your classes</p>
+    </div>
+  </header>
+
+  <main>
+    <a class="back-link" href="/">← Back to Gym Busy Meter</a>
+    <section class="card">
+      <p class="eyebrow">STEP 1</p>
+      <h2>Enter your class schedule</h2>
+      <p class="muted">Add the classes you want the assistant to work around. You do not need to include course names.</p>
+      <div id="classRows" class="class-rows"></div>
+      <button id="addClassButton" class="secondary-button" type="button">＋ Add a class</button>
+    </section>
+
+    <section class="card">
+      <p class="eyebrow">STEP 2</p>
+      <h2>Set your workout preferences</h2>
+      <div class="form-grid">
+        <label>Workout days per week
+          <select id="daysPerWeek"><option value="1">1 day</option><option value="2">2 days</option><option value="3" selected>3 days</option><option value="4">4 days</option><option value="5">5 days</option></select>
+        </label>
+        <label>Time available per visit
+          <select id="minutesPerWorkout"><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="45" selected>45 minutes</option><option value="60">60 minutes</option><option value="90">90 minutes</option><option value="120">120 minutes</option></select>
+        </label>
+        <label>Preferred workout time
+          <select id="preferredTime"><option value="Flexible">Flexible</option><option value="Morning">Morning</option><option value="Afternoon">Afternoon</option><option value="Evening">Evening</option></select>
+        </label>
+        <label>Experience level
+          <select id="experience"><option value="Beginner">Beginner</option><option value="Some experience" selected>Some experience</option><option value="Experienced">Experienced</option></select>
+        </label>
+        <label class="full-width">Activities you enjoy (optional)
+          <input id="activities" type="text" maxlength="180" placeholder="Example: weights, walking, swimming, basketball">
+        </label>
+      </div>
+      <button id="generateButton" class="primary-button" type="button">Generate my workout schedule</button>
+      <p id="formMessage" class="form-message" role="status" aria-live="polite"></p>
+    </section>
+
+    <section id="scheduleSection" class="card result-card" hidden>
+      <p class="eyebrow">YOUR SUGGESTED PLAN</p>
+      <h2>Weekly workout schedule</h2>
+      <div id="scheduleResult" class="ai-response"></div>
+      <p class="fine-print">This is a flexible activity suggestion, not medical advice. Adjust it to how you feel and your other commitments.</p>
+    </section>
+
+    <section class="card chat-card">
+      <p class="eyebrow">STEP 3 · OPTIONAL</p>
+      <h2>Chat with the Fitness Assistant</h2>
+      <p class="muted">Ask questions or request changes to your suggested schedule.</p>
+      <div id="chatMessages" class="chat-messages" aria-live="polite">
+        <div class="chat-bubble assistant-bubble">Hi! Enter your classes and preferences above, then generate a schedule. You can come back here to ask me to adjust it.</div>
+      </div>
+      <form id="chatForm" class="chat-form">
+        <label class="visually-hidden" for="chatInput">Your message</label>
+        <input id="chatInput" type="text" maxlength="1200" placeholder="Example: Can you move my Wednesday workout?" required>
+        <button class="primary-button" type="submit">Send</button>
+      </form>
+      <p id="chatMessage" class="form-message" role="status" aria-live="polite"></p>
+    </section>
+    <p class="fine-print privacy-note">For this first version, schedules and chat history are not saved to an account or MongoDB. Avoid entering private or sensitive information. AI responses can make mistakes.</p>
+  </main>
+  <footer>UNA SRC · Fitness Assistant prototype</footer>
+</body>
+</html>

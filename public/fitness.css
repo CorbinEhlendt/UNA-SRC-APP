@@ -1,0 +1,29 @@
+
+.back-link { display: inline-block; color: var(--una-purple); font-weight: 750; text-decoration: none; }
+.back-link:hover { text-decoration: underline; }
+.class-rows { display: grid; gap: 10px; margin: 18px 0 12px; }
+.class-row { display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr auto; gap: 8px; align-items: end; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: #fcfbfe; }
+.class-row label, .form-grid label { display: grid; gap: 6px; color: var(--ink); font-size: .86rem; font-weight: 700; }
+.class-row input, .class-row select, .form-grid input, .form-grid select, .chat-form input { width: 100%; min-width: 0; padding: 11px 10px; border: 1px solid #d8d0e3; border-radius: 9px; background: white; color: var(--ink); font: inherit; }
+.remove-class { border: 0; border-radius: 8px; padding: 10px; background: #f4edf8; color: var(--una-purple); font: inherit; cursor: pointer; }
+.secondary-button { border: 1px solid var(--una-purple); border-radius: 10px; background: white; color: var(--una-purple); padding: 11px 16px; font: inherit; font-weight: 750; cursor: pointer; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 18px 0; }
+.full-width { grid-column: 1 / -1; }
+.primary-button { border: 0; border-radius: 10px; background: var(--una-purple); color: white; padding: 13px 18px; font: inherit; font-weight: 800; cursor: pointer; }
+.primary-button:hover { background: var(--una-purple-dark); }
+.primary-button:disabled { opacity: .65; cursor: wait; }
+.form-message { min-height: 1.3em; margin: 10px 0 0; color: var(--muted); font-size: .88rem; }
+.form-message.error { color: #a43125; }
+.form-message.success { color: var(--una-purple); }
+.ai-response { line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+.result-card { border-top: 5px solid var(--una-gold); }
+.chat-messages { display: grid; gap: 10px; max-height: 360px; overflow-y: auto; margin: 18px 0; padding: 4px; }
+.chat-bubble { max-width: 92%; padding: 12px 14px; border-radius: 14px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.assistant-bubble { justify-self: start; background: #f2ecfb; color: var(--ink); }
+.user-bubble { justify-self: end; background: var(--una-purple); color: white; }
+.chat-form { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.privacy-note { margin: 0 4px 20px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.fitness-link-button { display: inline-block; width: auto; text-decoration: none; margin-top: 18px; }
+@media (max-width: 650px) { .class-row { grid-template-columns: 1fr 1fr; } .class-row label:first-child { grid-column: 1 / -1; } .remove-class { grid-column: 1 / -1; } }
+@media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } .full-width { grid-column: auto; } .chat-form { grid-template-columns: 1fr; } .chat-form button { width: 100%; } }
