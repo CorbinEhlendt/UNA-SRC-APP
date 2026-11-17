@@ -30,7 +30,7 @@ jobs:
           SSH_USER: cjehlendt #${{ secrets.SSH_USER }}
           SSH_HOST: 35.192.57.103 #${{ secrets.SSH_HOST }}
           APP_DIR:  app/server # ${{ vars.APP_DIR }}
-          PM2_NAME: app # ${{ vars.PM2_NAME }}
+          PM2_NAME: mongo.js # ${{ vars.PM2_NAME }}
         run: |
           ssh -i ~/.ssh/deploy_key -T "$SSH_USER@$SSH_HOST" <<EOF
             set -e
