@@ -27,3 +27,21 @@
 .fitness-link-button { display: inline-block; width: auto; text-decoration: none; margin-top: 18px; }
 @media (max-width: 650px) { .class-row { grid-template-columns: 1fr 1fr; } .class-row label:first-child { grid-column: 1 / -1; } .remove-class { grid-column: 1 / -1; } }
 @media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } .full-width { grid-column: auto; } .chat-form { grid-template-columns: 1fr; } .chat-form button { width: 100%; } }
+
+
+/* Markdown response formatting */
+.ai-response zero-md,
+.chat-bubble zero-md {
+    display: block;
+    width: 100%;
+    background: transparent;
+}
+
+/* Keep assistant responses readable */
+.assistant-bubble {
+    max-width: 92%;
+}
+
+.ai-response {
+    overflow-wrap: anywhere;
+}
