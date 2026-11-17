@@ -4,6 +4,7 @@ import { MongoClient } from "mongodb";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { GoogleGenAI } from "@google/genai";
+import { randomUUID } from "node:crypto";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -32,22 +33,142 @@ function validVisitorId(value) {
   return typeof value === "string" && value.length >= 10 && value.length <= 100;
 }
 
-app.get("/api/busy-meter", async (req, res) => {
+// Get or create a unique anonymous ID for this browser.
+// The same cookie is shared by QR check-ins and button check-ins.
+function getOrCreateVisitorId(req, res) {
+  const cookieName = "unaSrcVisitorId";
+
+  const cookie = (req.headers.cookie || "")
+    .split(";")
+    .map(item => item.trim())
+    .find(item => item.startsWith(`${cookieName}=`));
+
+  let visitorId = cookie
+    ? cookie.substring(cookieName.length + 1)
+    : null;
+
   try {
-    const cutoff = new Date(Date.now() - CHECKIN_WINDOW_MINUTES * 60 * 1000);
-    const activeCount = await checkIns.countDocuments({ createdAt: { $gte: cutoff } });
-    const latest = await checkIns.findOne(
-      { createdAt: { $gte: cutoff } },
-      { sort: { createdAt: -1 }, projection: { createdAt: 1 } }
+    visitorId = visitorId ? decodeURIComponent(visitorId) : null;
+  } catch {
+    visitorId = null;
+  }
+
+  if (!validVisitorId(visitorId)) {
+    visitorId = randomUUID();
+
+    const secure = process.env.NODE_ENV === "production"
+      ? "; Secure"
+      : "";
+
+    res.append(
+      "Set-Cookie",
+      `${cookieName}=${visitorId}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Lax${secure}`
+    );
+  }
+
+  return visitorId;
+}
+
+// Record a check-in only if this browser has not already
+// checked in during the previous 60 minutes.
+async function registerCheckIn(visitorId) {
+  const now = new Date();
+
+  const cutoff = new Date(
+    now.getTime() - CHECKIN_WINDOW_MINUTES * 60 * 1000
+  );
+
+  // Check for an existing active check-in.
+  const existing = await checkIns.findOne({
+    visitorId,
+    createdAt: { $gte: cutoff }
+  });
+
+  if (existing) {
+    return true;
+  }
+
+  // If an old check-in exists, reactivate that record.
+  const updated = await checkIns.updateOne(
+    {
+      visitorId,
+      createdAt: { $lt: cutoff }
+    },
+    {
+      $set: { createdAt: now }
+    }
+  );
+
+  if (updated.matchedCount > 0) {
+    return false;
+  }
+
+  // Otherwise, create a new check-in.
+  try {
+    await checkIns.insertOne({
+      visitorId,
+      createdAt: now
+    });
+
+    return false;
+  } catch (error) {
+    // Another request may have created this visitor's record
+    // at almost exactly the same time.
+    if (error.code !== 11000) {
+      throw error;
+    }
+
+    const active = await checkIns.findOne({
+      visitorId,
+      createdAt: { $gte: cutoff }
+    });
+
+    if (active) {
+      return true;
+    }
+
+    const retry = await checkIns.updateOne(
+      {
+        visitorId,
+        createdAt: { $lt: cutoff }
+      },
+      {
+        $set: { createdAt: now }
+      }
     );
 
-    const visitorId = validVisitorId(req.query.visitorId) ? req.query.visitorId : null;
-    const ownCheckIn = visitorId
-      ? await checkIns.findOne(
-          { visitorId, createdAt: { $gte: cutoff } },
-          { projection: { _id: 1 } }
-        )
-      : null;
+    if (retry.matchedCount > 0) {
+      return false;
+    }
+
+    throw error;
+  }
+}
+
+app.get("/api/busy-meter", async (req, res) => {
+  try {
+    const cutoff = new Date(
+      Date.now() - CHECKIN_WINDOW_MINUTES * 60 * 1000
+    );
+
+    const visitorId = getOrCreateVisitorId(req, res);
+
+    const activeCount = await checkIns.countDocuments({
+      createdAt: { $gte: cutoff }
+    });
+
+    const latest = await checkIns.findOne(
+      { createdAt: { $gte: cutoff } },
+      {
+        sort: { createdAt: -1 },
+        projection: { createdAt: 1 }
+      }
+    );
+
+    const ownCheckIn = await checkIns.findOne({
+      visitorId,
+      createdAt: { $gte: cutoff }
+    });
 
     res.json({
       activeCount,
@@ -56,24 +177,30 @@ app.get("/api/busy-meter", async (req, res) => {
       checkedIn: Boolean(ownCheckIn),
       expiresAfterMinutes: CHECKIN_WINDOW_MINUTES
     });
+
   } catch (error) {
     console.error("Could not retrieve check-ins:", error.message);
-    res.status(500).json({ error: "Could not load the crowd meter." });
+
+    res.status(500).json({
+      error: "Could not load the crowd meter."
+    });
   }
 });
 
 
-// Updated GET route for QR Code check-ins in server/mongo.js
 app.get("/api/busy-meter/check-in", async (req, res) => {
-  // Generate a brand new unique ID for every scan so multiple people scanning 
-  // on separate phones (or even testing on the same browser) each count as a unique check-in.
-  const visitorId = `scan-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-
   try {
-    const now = new Date();
+    const visitorId = getOrCreateVisitorId(req, res);
 
-    // Insert as a new unique check-in document every time the QR code is scanned
-    await checkIns.insertOne({ visitorId, createdAt: now });
+    const alreadyCheckedIn = await registerCheckIn(visitorId);
+
+    const heading = alreadyCheckedIn
+      ? "Already Checked In!"
+      : "Successfully Checked In!";
+
+    const message = alreadyCheckedIn
+      ? "You're already counted at the UNA Student Recreation Center."
+      : "You've successfully checked in to the UNA Student Recreation Center.";
 
     res.send(`
       <!DOCTYPE html>
@@ -84,53 +211,68 @@ app.get("/api/busy-meter/check-in", async (req, res) => {
         <title>UNA SRC | QR Check-In</title>
         <link rel="stylesheet" href="/style.css">
       </head>
-      <body style="display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f4f4f9;">
-        <main style="max-width: 400px; width: 90%; text-align: center;">
-          <section class="card" style="padding: 2rem;">
-            <h1 style="color: #4b2b7f; margin-bottom: 0.5rem;">✅ Checked In!</h1>
-            <p style="font-size: 1.1rem; color: #333;">You've successfully checked in to the UNA Student Recreation Center.</p>
-            <p style="font-size: 0.9rem; color: #666; margin-top: 1rem;">Your check-in will automatically expire in 60 minutes.</p>
-            <a href="/" class="checkin-button" style="display: inline-block; margin-top: 1.5rem; text-decoration: none;">View Busy Meter</a>
+
+      <body style="display:flex; justify-content:center; align-items:center; min-height:100vh; margin:0; background-color:#f4f4f9;">
+
+        <main style="max-width:400px; width:90%; text-align:center;">
+
+          <section class="card" style="padding:2rem;">
+
+            <h1 style="color:#4b2b7f;">
+              ${heading}
+            </h1>
+
+            <p style="font-size:1.1rem; color:#333;">
+              ${message}
+            </p>
+
+            <p style="font-size:0.9rem; color:#666; margin-top:1rem;">
+              Your check-in automatically expires after 60 minutes.
+            </p>
+
+            <a href="/" class="checkin-button"
+               style="display:inline-block; margin-top:1.5rem; text-decoration:none;">
+              View Busy Meter
+            </a>
+
           </section>
+
         </main>
       </body>
       </html>
     `);
+
   } catch (error) {
     console.error("Could not process QR check-in:", error.message);
-    res.status(500).send("Error processing check-in. Please try again.");
+
+    res.status(500).send(
+      "Error processing check-in. Please try again."
+    );
   }
 });
 
 app.post("/api/busy-meter/check-in", async (req, res) => {
-  const { visitorId } = req.body ?? {};
-
-  if (!validVisitorId(visitorId)) {
-    return res.status(400).json({
-      error: "Your browser check-in ID is missing. Refresh the page and try again."
-    });
-  }
-
-
   try {
-    const cutoff = new Date(Date.now() - CHECKIN_WINDOW_MINUTES * 60 * 1000);
-    const existing = await checkIns.findOne({ visitorId, createdAt: { $gte: cutoff } });
-    const now = new Date();
+    const visitorId = getOrCreateVisitorId(req, res);
 
-    if (existing) {
-      await checkIns.updateOne({ _id: existing._id }, { $set: { createdAt: now } });
-      return res.json({ success: true, alreadyCheckedIn: true });
+    const alreadyCheckedIn = await registerCheckIn(visitorId);
+
+    if (alreadyCheckedIn) {
+      return res.status(409).json({
+        success: false,
+        alreadyCheckedIn: true,
+        error: "You're already checked in! You cannot check in twice within 60 minutes."
+      });
     }
 
-    await checkIns.updateOne(
-      { visitorId },
-      { $set: { visitorId, createdAt: now } },
-      { upsert: true }
-    );
+    return res.status(201).json({
+      success: true,
+      alreadyCheckedIn: false
+    });
 
-    return res.status(201).json({ success: true, alreadyCheckedIn: false });
   } catch (error) {
     console.error("Could not save check-in:", error.message);
+
     return res.status(500).json({
       error: "Could not save your check-in. Please try again."
     });
@@ -348,7 +490,10 @@ app.post("/api/fitness/generate", async (req, res) => {
       `Preferences: ${JSON.stringify(preferences)}\n\n` +
       `Give a brief explanation, then a clear day-by-day schedule with suggested activity and duration. ` +
       `Include rest days. If a day has no class listed, that does not automatically mean the student is free all day; ` +
-      `suggest a flexible time window based on their preferred time. Remind them this is a flexible starting point.`;
+      `suggest a flexible time window based on their preferred time. Remind them this is a flexible starting point.` +
+      `Make sure to include specific exercises for each recommended muscle group for each day.`;
+      
+      ;
 
     const answer = await requestFitnessAI(prompt);
     res.json({ answer });

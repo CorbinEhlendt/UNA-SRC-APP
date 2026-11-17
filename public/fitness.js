@@ -12,6 +12,31 @@ const chatMessages = document.querySelector("#chatMessages");
 const chatMessage = document.querySelector("#chatMessage");
 const conversation = [];
 
+import ZeroMd from "https://cdn.jsdelivr.net/npm/zero-md@3";
+import DOMPurify from "https://cdn.jsdelivr.net/npm/dompurify@3/+esm";
+
+customElements.define(
+    "zero-md",
+    class extends ZeroMd {
+        async parse(obj) {
+            const parsed = await super.parse(obj);
+            return DOMPurify.sanitize(parsed);
+        }
+    }
+);
+
+function createMarkdownRenderer(markdown) {
+    const renderer = document.createElement("zero-md");
+
+    const markdownContent = document.createElement("script");
+    markdownContent.type = "text/markdown";
+    markdownContent.textContent = markdown;
+
+    renderer.appendChild(markdownContent);
+
+    return renderer;
+}
+
 function addClassRow() {
   const row = document.createElement("div");
   row.className = "class-row";
@@ -69,7 +94,9 @@ addClassRow();
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "Could not generate a schedule.");
-    scheduleResult.textContent = result.answer;
+    scheduleResult.replaceChildren(
+      createMarkdownRenderer(result.answer)
+    );
     scheduleSection.hidden = false;
     showMessage(formMessage, "Your schedule is ready. You can ask for changes in the chat below.", "success");
     scheduleSection.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -78,11 +105,20 @@ addClassRow();
 });
 
 function addChatBubble(role, content) {
-  const bubble = document.createElement("div");
-  bubble.className = `chat-bubble ${role === "user" ? "user-bubble" : "assistant-bubble"}`;
-  bubble.textContent = content;
-  chatMessages.append(bubble);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
+    const bubble = document.createElement("div");
+
+    bubble.className = `chat-bubble ${
+        role === "user" ? "user-bubble" : "assistant-bubble"
+    }`;
+
+    if (role === "assistant") {
+        bubble.appendChild(createMarkdownRenderer(content));
+    } else {
+        bubble.textContent = content;
+    }
+
+    chatMessages.append(bubble);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
 chatForm.addEventListener("submit", async (event) => {
